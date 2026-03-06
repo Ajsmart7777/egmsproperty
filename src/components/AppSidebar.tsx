@@ -1,5 +1,18 @@
 import { useState, useEffect } from "react";
-import { Home, ClipboardList, Settings, LogOut, ShieldCheck, Users, Building2, Wrench, User, Sliders, Shield, Phone } from "lucide-react";
+import {
+  Home,
+  ClipboardList,
+  Settings,
+  LogOut,
+  ShieldCheck,
+  Users,
+  Building2,
+  Wrench,
+  User,
+  Sliders,
+  Shield,
+  Phone,
+} from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +31,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const navItems = [
+const tenantNavItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "My Requests", url: "/my-requests", icon: ClipboardList },
   { title: "Contact", url: "/contact", icon: Phone },
@@ -37,6 +50,8 @@ const adminNavItems = [
 const vendorNavItems = [
   { title: "Vendor Dashboard", url: "/vendor", icon: Wrench },
   { title: "My Profile", url: "/vendor/profile", icon: User },
+  { title: "Contact", url: "/contact", icon: Phone },
+  { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -45,31 +60,38 @@ export function AppSidebar() {
   const { signOut, user } = useAuth();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+
   const [isAdmin, setIsAdmin] = useState(false);
   const [isVendor, setIsVendor] = useState(false);
 
   useEffect(() => {
     const checkRoles = async () => {
-      if (!user) return;
-      
+      if (!user) {
+        setIsAdmin(false);
+        setIsVendor(false);
+        return;
+      }
+
       const { data } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id);
-      
+
       if (data) {
-        setIsAdmin(data.some(r => r.role === "admin"));
-        setIsVendor(data.some(r => r.role === "vendor"));
+        setIsAdmin(data.some((r) => r.role === "admin"));
+        setIsVendor(data.some((r) => r.role === "vendor"));
       }
     };
+
     checkRoles();
   }, [user]);
 
-  const allNavItems = [
-    ...navItems,
-    ...(isAdmin ? adminNavItems : []),
-    ...(isVendor ? vendorNavItems : []),
-  ];
+  const allNavItems = isVendor && !isAdmin
+    ? vendorNavItems
+    : [
+        ...tenantNavItems,
+        ...(isAdmin ? adminNavItems : []),
+      ];
 
   const handleSignOut = async () => {
     try {
@@ -113,7 +135,9 @@ export function AppSidebar() {
                         : "text-sidebar-foreground hover:bg-secondary hover:text-secondary-foreground"
                     }`}
                   >
-                    <item.icon className={`h-4 w-4 ${isActive(item.url) ? "text-primary-foreground" : ""}`} />
+                    <item.icon
+                      className={`h-4 w-4 ${isActive(item.url) ? "text-primary-foreground" : ""}`}
+                    />
                     <span>{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
