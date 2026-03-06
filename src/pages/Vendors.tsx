@@ -108,6 +108,18 @@ const Vendors = () => {
     setNewVendorSpecialties([]);
   };
 
+  const parseFunctionError = async (response: Response) => {
+    const contentType = response.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      const data = await response.json().catch(() => null);
+      return data?.error || data?.message || "Request failed";
+    }
+
+    const text = await response.text().catch(() => "");
+    return text || "Request failed";
+  };
+
   const handleCreateVendor = async () => {
     if (!newVendorEmail || !newVendorPassword || !newVendorName) {
       toast.error("Please fill in all fields");
@@ -132,17 +144,24 @@ const Vendors = () => {
         throw new Error("Admin session not found");
       }
 
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !anonKey) {
+        throw new Error("Missing Supabase environment variables");
+      }
+
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-vendor-role`,
+        `${supabaseUrl}/functions/v1/create-vendor-role`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${adminToken}`,
-            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+            apikey: anonKey,
           },
           body: JSON.stringify({
-            email: newVendorEmail.trim(),
+            email: newVendorEmail.trim().toLowerCase(),
             password: newVendorPassword,
             fullName: newVendorName.trim(),
             specialties: newVendorSpecialties,
@@ -150,11 +169,12 @@ const Vendors = () => {
         }
       );
 
-      const result = await response.json();
-
       if (!response.ok) {
-        throw new Error(result.error || "Failed to create vendor account");
+        const errorMessage = await parseFunctionError(response);
+        throw new Error(errorMessage || "Failed to create vendor account");
       }
+
+      const result = await response.json();
 
       await logAction({
         action: "vendor_created",
@@ -173,7 +193,7 @@ const Vendors = () => {
       refetch();
     } catch (error: any) {
       console.error("Error creating vendor:", error);
-      toast.error(error.message || "Failed to create vendor account");
+      toast.error(String(error?.message || "Failed to create vendor account"));
     } finally {
       setCreating(false);
     }
@@ -361,9 +381,15 @@ const Vendors = () => {
         } = await supabase.auth.getSession();
 
         const adminToken = session?.access_token;
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
         if (!adminToken) {
           throw new Error("Admin session not found");
+        }
+
+        if (!supabaseUrl || !anonKey) {
+          throw new Error("Missing Supabase environment variables");
         }
 
         let successCount = 0;
@@ -373,6 +399,7 @@ const Vendors = () => {
 
         for (const row of dataRows) {
           const columns = parseCSVLine(row);
+
           if (columns.length < 3) {
             processedCount++;
             setImportProgress({ current: processedCount, total: dataRows.length });
@@ -404,16 +431,16 @@ const Vendors = () => {
 
           try {
             const response = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-vendor-role`,
+              `${supabaseUrl}/functions/v1/create-vendor-role`,
               {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
                   Authorization: `Bearer ${adminToken}`,
-                  apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                  apikey: anonKey,
                 },
                 body: JSON.stringify({
-                  email: email.trim(),
+                  email: email.trim().toLowerCase(),
                   password: password.trim(),
                   fullName: name.trim(),
                   specialties: vendorSpecialties,
@@ -421,10 +448,9 @@ const Vendors = () => {
               }
             );
 
-            const result = await response.json();
-
             if (!response.ok) {
-              throw new Error(result.error || "Failed to create vendor");
+              const errorMessage = await parseFunctionError(response);
+              throw new Error(errorMessage || "Failed to create vendor");
             }
 
             successCount++;
