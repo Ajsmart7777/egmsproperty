@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/sidebar";
 
 const tenantNavItems = [
-  { title: "Dashboard", url: "/", icon: Home },
+  { title: "Dashboard", url: "/tenant-dashboard", icon: Home },
   { title: "My Requests", url: "/my-requests", icon: ClipboardList },
   { title: "Contact", url: "/contact", icon: Phone },
   { title: "Settings", url: "/settings", icon: Settings },
@@ -45,6 +45,8 @@ const adminNavItems = [
   { title: "Vendors", url: "/vendors", icon: Wrench },
   { title: "Tenants", url: "/tenants", icon: Users },
   { title: "Properties", url: "/properties", icon: Building2 },
+  { title: "Contact", url: "/contact", icon: Phone },
+  { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 const vendorNavItems = [
@@ -86,19 +88,18 @@ export function AppSidebar() {
     checkRoles();
   }, [user]);
 
-  const allNavItems = isVendor && !isAdmin
+  const allNavItems = isAdmin
+    ? adminNavItems
+    : isVendor
     ? vendorNavItems
-    : [
-        ...tenantNavItems,
-        ...(isAdmin ? adminNavItems : []),
-      ];
+    : tenantNavItems;
 
   const handleSignOut = async () => {
     try {
       await signOut();
       toast.success("Signed out successfully");
       navigate("/auth");
-    } catch (error) {
+    } catch {
       toast.error("Failed to sign out");
     }
   };

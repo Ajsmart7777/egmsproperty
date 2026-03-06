@@ -17,7 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 const tenantNavItems = [
-  { title: "Home", url: "/", icon: Home },
+  { title: "Home", url: "/tenant-dashboard", icon: Home },
   { title: "Requests", url: "/my-requests", icon: ClipboardList },
   { title: "Contact", url: "/contact", icon: Phone },
   { title: "Settings", url: "/settings", icon: Settings },
@@ -67,14 +67,14 @@ export function MobileNav() {
     checkRoles();
   }, [user]);
 
-  const allNavItems =
-    isVendor && !isAdmin
-      ? vendorNavItems
-      : [...tenantNavItems, ...(isAdmin ? adminNavItems : [])];
+  const allNavItems = isAdmin
+    ? adminNavItems
+    : isVendor
+    ? vendorNavItems
+    : tenantNavItems;
 
   const isActive = (path: string) => location.pathname === path;
-
-  const fabTarget = isVendor && !isAdmin ? "/vendor" : "/maintenance-request";
+  const showFab = !isAdmin && !isVendor;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border shadow-elevated z-50 md:hidden safe-area-inset-bottom">
@@ -102,14 +102,16 @@ export function MobileNav() {
           </button>
         ))}
 
-        <button
-          onClick={() => navigate(fabTarget)}
-          className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full"
-        >
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-primary-foreground shadow-card active:scale-95 transition-transform">
-            <Plus className="h-5 w-5" />
-          </div>
-        </button>
+        {showFab && (
+          <button
+            onClick={() => navigate("/maintenance-request")}
+            className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-primary-foreground shadow-card active:scale-95 transition-transform">
+              <Plus className="h-5 w-5" />
+            </div>
+          </button>
+        )}
       </div>
     </nav>
   );
