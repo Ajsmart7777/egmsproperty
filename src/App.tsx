@@ -50,52 +50,54 @@ const App = () => (
               }
             />
 
-     <Route
-  path="/tenant-dashboard"
-  element={
-    <ProtectedRoute>
-      <RoleProtectedRoute allow={["tenant"]}>
-        <AppLayout>
-          <Index />
-        </AppLayout>
-      </RoleProtectedRoute>
-    </ProtectedRoute>
-  }
-/>
+            <Route
+              path="/tenant-dashboard"
+              element={
+                <ProtectedRoute>
+                  <RoleProtectedRoute allow={["tenant"]}>
+                    <AppLayout>
+                      <Index />
+                    </AppLayout>
+                  </RoleProtectedRoute>
+                </ProtectedRoute>
+              }
+            />
 
-           <Route
-  path="/maintenance-request"
-  element={
-    <ProtectedRoute>
-      <RoleProtectedRoute allow={["tenant"]}>
-        <AppLayout>
-          <MaintenanceRequest />
-        </AppLayout>
-      </RoleProtectedRoute>
-    </ProtectedRoute>
-  }
-/>
+            <Route
+              path="/maintenance-request"
+              element={
+                <ProtectedRoute>
+                  <RoleProtectedRoute allow={["tenant"]}>
+                    <AppLayout>
+                      <MaintenanceRequest />
+                    </AppLayout>
+                  </RoleProtectedRoute>
+                </ProtectedRoute>
+              }
+            />
 
-     <Route
-  path="/my-requests"
-  element={
-    <ProtectedRoute>
-      <RoleProtectedRoute allow={["tenant"]}>
-        <AppLayout>
-          <MyRequests />
-        </AppLayout>
-      </RoleProtectedRoute>
-    </ProtectedRoute>
-  }
-/>
+            <Route
+              path="/my-requests"
+              element={
+                <ProtectedRoute>
+                  <RoleProtectedRoute allow={["tenant"]}>
+                    <AppLayout>
+                      <MyRequests />
+                    </AppLayout>
+                  </RoleProtectedRoute>
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/request/:id"
               element={
                 <ProtectedRoute>
-                  <AppLayout>
-                    <RequestDetail />
-                  </AppLayout>
+                  <RoleProtectedRoute allow={["tenant", "admin", "vendor"]}>
+                    <AppLayout>
+                      <RequestDetail />
+                    </AppLayout>
+                  </RoleProtectedRoute>
                 </ProtectedRoute>
               }
             />
@@ -104,9 +106,11 @@ const App = () => (
               path="/settings"
               element={
                 <ProtectedRoute>
-                  <AppLayout>
-                    <Settings />
-                  </AppLayout>
+                  <RoleProtectedRoute allow={["tenant", "admin", "vendor"]}>
+                    <AppLayout>
+                      <Settings />
+                    </AppLayout>
+                  </RoleProtectedRoute>
                 </ProtectedRoute>
               }
             />
@@ -115,9 +119,11 @@ const App = () => (
               path="/profile"
               element={
                 <ProtectedRoute>
-                  <AppLayout>
-                    <Profile />
-                  </AppLayout>
+                  <RoleProtectedRoute allow={["tenant", "admin", "vendor"]}>
+                    <AppLayout>
+                      <Profile />
+                    </AppLayout>
+                  </RoleProtectedRoute>
                 </ProtectedRoute>
               }
             />
@@ -126,9 +132,11 @@ const App = () => (
               path="/privacy-security"
               element={
                 <ProtectedRoute>
-                  <AppLayout>
-                    <PrivacySecurity />
-                  </AppLayout>
+                  <RoleProtectedRoute allow={["tenant", "admin", "vendor"]}>
+                    <AppLayout>
+                      <PrivacySecurity />
+                    </AppLayout>
+                  </RoleProtectedRoute>
                 </ProtectedRoute>
               }
             />
@@ -137,9 +145,11 @@ const App = () => (
               path="/help-support"
               element={
                 <ProtectedRoute>
-                  <AppLayout>
-                    <HelpSupport />
-                  </AppLayout>
+                  <RoleProtectedRoute allow={["tenant", "admin", "vendor"]}>
+                    <AppLayout>
+                      <HelpSupport />
+                    </AppLayout>
+                  </RoleProtectedRoute>
                 </ProtectedRoute>
               }
             />
@@ -148,9 +158,11 @@ const App = () => (
               path="/emergency-maintenance"
               element={
                 <ProtectedRoute>
-                  <AppLayout>
-                    <EmergencyMaintenance />
-                  </AppLayout>
+                  <RoleProtectedRoute allow={["tenant"]}>
+                    <AppLayout>
+                      <EmergencyMaintenance />
+                    </AppLayout>
+                  </RoleProtectedRoute>
                 </ProtectedRoute>
               }
             />
@@ -159,9 +171,11 @@ const App = () => (
               path="/admin"
               element={
                 <ProtectedRoute>
-                  <AppLayout>
-                    <AdminDashboard />
-                  </AppLayout>
+                  <RoleProtectedRoute allow={["admin"]}>
+                    <AppLayout>
+                      <AdminDashboard />
+                    </AppLayout>
+                  </RoleProtectedRoute>
                 </ProtectedRoute>
               }
             />
@@ -170,9 +184,11 @@ const App = () => (
               path="/admin/settings"
               element={
                 <ProtectedRoute>
-                  <AppLayout>
-                    <AdminSettings />
-                  </AppLayout>
+                  <RoleProtectedRoute allow={["admin"]}>
+                    <AppLayout>
+                      <AdminSettings />
+                    </AppLayout>
+                  </RoleProtectedRoute>
                 </ProtectedRoute>
               }
             />
@@ -181,9 +197,11 @@ const App = () => (
               path="/admin/audit-logs"
               element={
                 <ProtectedRoute>
-                  <AppLayout>
-                    <AuditLogs />
-                  </AppLayout>
+                  <RoleProtectedRoute allow={["admin"]}>
+                    <AppLayout>
+                      <AuditLogs />
+                    </AppLayout>
+                  </RoleProtectedRoute>
                 </ProtectedRoute>
               }
             />
@@ -192,9 +210,11 @@ const App = () => (
               path="/vendor"
               element={
                 <ProtectedRoute>
-                  <AppLayout>
-                    <VendorDashboard />
-                  </AppLayout>
+                  <RoleProtectedRoute allow={["vendor"]}>
+                    <AppLayout>
+                      <VendorDashboard />
+                    </AppLayout>
+                  </RoleProtectedRoute>
                 </ProtectedRoute>
               }
             />
@@ -203,9 +223,11 @@ const App = () => (
               path="/vendor/profile"
               element={
                 <ProtectedRoute>
-                  <AppLayout>
-                    <VendorProfile />
-                  </AppLayout>
+                  <RoleProtectedRoute allow={["vendor"]}>
+                    <AppLayout>
+                      <VendorProfile />
+                    </AppLayout>
+                  </RoleProtectedRoute>
                 </ProtectedRoute>
               }
             />
@@ -214,9 +236,11 @@ const App = () => (
               path="/vendors"
               element={
                 <ProtectedRoute>
-                  <AppLayout>
-                    <Vendors />
-                  </AppLayout>
+                  <RoleProtectedRoute allow={["admin"]}>
+                    <AppLayout>
+                      <Vendors />
+                    </AppLayout>
+                  </RoleProtectedRoute>
                 </ProtectedRoute>
               }
             />
@@ -225,9 +249,11 @@ const App = () => (
               path="/tenants"
               element={
                 <ProtectedRoute>
-                  <AppLayout>
-                    <Tenants />
-                  </AppLayout>
+                  <RoleProtectedRoute allow={["admin"]}>
+                    <AppLayout>
+                      <Tenants />
+                    </AppLayout>
+                  </RoleProtectedRoute>
                 </ProtectedRoute>
               }
             />
@@ -236,9 +262,11 @@ const App = () => (
               path="/properties"
               element={
                 <ProtectedRoute>
-                  <AppLayout>
-                    <Properties />
-                  </AppLayout>
+                  <RoleProtectedRoute allow={["admin"]}>
+                    <AppLayout>
+                      <Properties />
+                    </AppLayout>
+                  </RoleProtectedRoute>
                 </ProtectedRoute>
               }
             />
@@ -247,9 +275,11 @@ const App = () => (
               path="/contact"
               element={
                 <ProtectedRoute>
-                  <AppLayout>
-                    <Contact />
-                  </AppLayout>
+                  <RoleProtectedRoute allow={["tenant", "admin", "vendor"]}>
+                    <AppLayout>
+                      <Contact />
+                    </AppLayout>
+                  </RoleProtectedRoute>
                 </ProtectedRoute>
               }
             />
