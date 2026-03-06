@@ -225,8 +225,7 @@ export function AdminContactsManager() {
               setContactForm({ label: "", type: "phone", value: "" });
               setContactDialogOpen(true);
             }}>
-              <Plus className="h-4 w-4 mr-1" /> Add
-            </Button>
+             {/* removed plus icon */}
           </CardHeader>
           <CardContent className="space-y-2">
             {contacts.length === 0 ? (
@@ -266,8 +265,7 @@ export function AdminContactsManager() {
               setAddressForm({ label: "", address_line1: "", address_line2: "", city: "", state: "", zip_code: "", country: "UAE" });
               setAddressDialogOpen(true);
             }}>
-              <Plus className="h-4 w-4 mr-1" /> Add
-            </Button>
+              {/* removed plus icon */}
           </CardHeader>
           <CardContent className="space-y-2">
             {addresses.length === 0 ? (
