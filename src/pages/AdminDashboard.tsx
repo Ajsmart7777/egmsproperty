@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, ShieldX } from "lucide-react";
+import { ShieldX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAdminRequests } from "@/hooks/useAdminRequests";
 import { AdminHeader } from "@/components/admin/AdminHeader";
@@ -23,7 +23,7 @@ const AdminDashboard = () => {
     return {
       total: requests.length,
       pending: requests.filter((r) => r.status === "pending").length,
-      inProgress: requests.filter((r) => r.status === "in-progress").length,
+      inProgress: requests.filter((r) => r.status === "in_progress").length,
       completed: requests.filter((r) => r.status === "completed").length,
     };
   }, [requests]);
@@ -125,15 +125,6 @@ const AdminDashboard = () => {
         onBulkUpdateStatus={bulkUpdateStatus}
         onAssignStaff={assignStaff}
       />
-
-      {/* Floating Add Button */}
-      <Button
-        onClick={() => navigate("/maintenance-request")}
-        className="fixed bottom-20 md:bottom-6 right-4 md:right-6 h-12 w-12 md:h-14 md:w-14 rounded-full shadow-elevated hover:shadow-elevated z-40"
-        size="icon"
-      >
-        <Plus className="h-5 w-5 md:h-6 md:w-6" />
-      </Button>
     </div>
   );
 };
