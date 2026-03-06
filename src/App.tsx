@@ -1,3 +1,4 @@
+import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import RoleBasedHome from "./pages/RoleBasedHome";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -49,38 +50,44 @@ const App = () => (
               }
             />
 
-            <Route
-              path="/tenant-dashboard"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Index />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
+     <Route
+  path="/tenant-dashboard"
+  element={
+    <ProtectedRoute>
+      <RoleProtectedRoute allow={["tenant"]}>
+        <AppLayout>
+          <Index />
+        </AppLayout>
+      </RoleProtectedRoute>
+    </ProtectedRoute>
+  }
+/>
 
-            <Route
-              path="/maintenance-request"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <MaintenanceRequest />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
+           <Route
+  path="/maintenance-request"
+  element={
+    <ProtectedRoute>
+      <RoleProtectedRoute allow={["tenant"]}>
+        <AppLayout>
+          <MaintenanceRequest />
+        </AppLayout>
+      </RoleProtectedRoute>
+    </ProtectedRoute>
+  }
+/>
 
-            <Route
-              path="/my-requests"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <MyRequests />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
+     <Route
+  path="/my-requests"
+  element={
+    <ProtectedRoute>
+      <RoleProtectedRoute allow={["tenant"]}>
+        <AppLayout>
+          <MyRequests />
+        </AppLayout>
+      </RoleProtectedRoute>
+    </ProtectedRoute>
+  }
+/>
 
             <Route
               path="/request/:id"
