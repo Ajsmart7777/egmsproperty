@@ -21,6 +21,31 @@ export interface AdminMaintenanceRequest {
   tenant_email?: string;
 }
 
+const normalizeStatus = (status: string) => {
+  const value = status.trim().toLowerCase();
+
+  if (value === "in_progress" || value === "in progress") {
+    return "in-progress";
+  }
+
+  if (value === "pending") {
+    return "pending";
+  }
+
+  if (value === "completed") {
+    return "completed";
+  }
+
+  return value;
+};
+
+const formatStatusLabel = (status: string) => {
+  const normalized = normalizeStatus(status);
+
+  if (normalized === "in-progress") return "in progress";
+  return normalized;
+};
+
 export const useAdminRequests = () => {
   const { user } = useAuth();
   const [requests, setRequests] = useState<AdminMaintenanceRequest[]>([]);
@@ -29,7 +54,7 @@ export const useAdminRequests = () => {
 
   const checkAdminRole = async () => {
     if (!user) return false;
-    
+
     const { data, error } = await supabase
       .from("user_roles")
       .select("role")
@@ -61,7 +86,6 @@ export const useAdminRequests = () => {
         return;
       }
 
-      // Fetch all requests (admin can see all due to RLS policy)
       const { data: requestsData, error: requestsError } = await supabase
         .from("maintenance_requests")
         .select("*")
@@ -69,18 +93,17 @@ export const useAdminRequests = () => {
 
       if (requestsError) throw requestsError;
 
-      // Fetch all profiles for tenant names
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("user_id, full_name, email");
 
       if (profilesError) throw profilesError;
 
-      // Map tenant info to requests
       const requestsWithTenants = (requestsData || []).map((request) => {
         const profile = profilesData?.find((p) => p.user_id === request.user_id);
         return {
           ...request,
+          status: normalizeStatus(request.status),
           tenant_name: profile?.full_name || "Unknown Tenant",
           tenant_email: profile?.email || "",
         };
@@ -101,22 +124,23 @@ export const useAdminRequests = () => {
 
   const updateRequestStatus = async (requestId: string, newStatus: string) => {
     try {
+      const normalizedStatus = normalizeStatus(newStatus);
+
       const { error } = await supabase
         .from("maintenance_requests")
-        .update({ status: newStatus })
+        .update({ status: normalizedStatus })
         .eq("id", requestId);
 
       if (error) throw error;
 
-      // Add update entry
       await supabase.from("request_updates").insert({
         request_id: requestId,
         update_type: "status_change",
-        message: `Status changed to ${newStatus}`,
+        message: `Status changed to ${formatStatusLabel(normalizedStatus)}`,
         author: "Admin",
       });
 
-      toast.success(`Request marked as ${newStatus}`);
+      toast.success(`Request marked as ${formatStatusLabel(normalizedStatus)}`);
       await fetchRequests();
     } catch (error) {
       console.error("Error updating request:", error);
@@ -126,24 +150,27 @@ export const useAdminRequests = () => {
 
   const bulkUpdateStatus = async (requestIds: string[], newStatus: string) => {
     try {
+      const normalizedStatus = normalizeStatus(newStatus);
+
       const { error } = await supabase
         .from("maintenance_requests")
-        .update({ status: newStatus })
+        .update({ status: normalizedStatus })
         .in("id", requestIds);
 
       if (error) throw error;
 
-      // Add update entries for all requests
       const updateEntries = requestIds.map((id) => ({
         request_id: id,
         update_type: "status_change",
-        message: `Status changed to ${newStatus}`,
+        message: `Status changed to ${formatStatusLabel(normalizedStatus)}`,
         author: "Admin",
       }));
 
       await supabase.from("request_updates").insert(updateEntries);
 
-      toast.success(`${requestIds.length} requests marked as ${newStatus}`);
+      toast.success(
+        `${requestIds.length} requests marked as ${formatStatusLabel(normalizedStatus)}`
+      );
       await fetchRequests();
     } catch (error) {
       console.error("Error bulk updating requests:", error);
@@ -151,16 +178,19 @@ export const useAdminRequests = () => {
     }
   };
 
-  const assignStaff = async (requestId: string, vendorUserId: string, vendorName: string) => {
+  const assignStaff = async (
+    requestId: string,
+    vendorUserId: string,
+    vendorName: string
+  ) => {
     try {
-      // Get request details for notification
-      const request = requests.find(r => r.id === requestId);
-      
+      const request = requests.find((r) => r.id === requestId);
+
       const { error } = await supabase
         .from("maintenance_requests")
-        .update({ 
+        .update({
           assigned_to: vendorName,
-          vendor_user_id: vendorUserId 
+          vendor_user_id: vendorUserId,
         })
         .eq("id", requestId);
 
@@ -173,7 +203,6 @@ export const useAdminRequests = () => {
         author: "Admin",
       });
 
-      // Send notification email to vendor
       if (request) {
         try {
           await supabase.functions.invoke("notify-vendor-assignment", {
@@ -190,7 +219,6 @@ export const useAdminRequests = () => {
           });
         } catch (notifyError) {
           console.error("Error sending vendor notification:", notifyError);
-          // Don't fail the assignment if notification fails
         }
       }
 
