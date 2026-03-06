@@ -1,80 +1,59 @@
-import { useNavigate } from "react-router-dom";
-import { HelpCircle, MessageSquare, FileText, ExternalLink } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
-import MobileHeader from "@/components/ui/MobileHeader";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-
-const HelpSupport = () => {
-  const navigate = useNavigate();
-  const isMobile = useIsMobile();
-
-  const faqs = [
-    { q: "How do I submit a maintenance request?", a: "Go to the Dashboard and tap 'New Request'. Fill in the details about your issue, add photos if needed, and submit." },
-    { q: "How long does it take to get a response?", a: "Most requests are reviewed within 24 hours. Emergency requests are prioritized and handled as soon as possible." },
-    { q: "Can I cancel a maintenance request?", a: "You can cancel a request as long as it hasn't been assigned to a vendor yet. Go to My Requests and select the request to cancel." },
-    { q: "How do I update my contact information?", a: "Go to Settings > Profile to update your name, phone number, and notification preferences." },
+export default function HelpSupport() {
+  const articles = [
+    {
+      title: "What qualifies as emergency maintenance?",
+      body: "Emergency maintenance includes flooding, electrical sparks, broken locks affecting security, gas or fire risk, and major plumbing leaks that need immediate attention.",
+    },
+    {
+      title: "How to submit a maintenance request",
+      body: "Go to your dashboard and click on Submit Maintenance Request. Fill in the issue details clearly, add your apartment or unit, and upload a photo if needed.",
+    },
+    {
+      title: "My AC is not cooling properly",
+      body: "Check that the power supply is stable and confirm the unit is switched on properly. If the issue continues, submit a maintenance request with a short description.",
+    },
+    {
+      title: "What should I do if water is leaking?",
+      body: "If the leakage is minor, place a container under the source and submit a normal request. If the leakage is heavy or spreading, use the Emergency Maintenance option immediately.",
+    },
+    {
+      title: "When should I contact management directly?",
+      body: "Contact management directly for urgent safety-related issues, access problems, or if a technician has not arrived after an approved emergency request.",
+    },
+    {
+      title: "How do I track my request?",
+      body: "Open View My Requests on your dashboard to see the current status of your request, including pending, in progress, or completed updates.",
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-20 md:pb-0">
-      {isMobile && (
-        <MobileHeader title="Help & Support" onBack={() => navigate("/settings")} />
-      )}
-
-      <main className="flex-1 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-2xl mx-auto space-y-6">
-          {!isMobile && (
-            <h1 className="text-2xl font-bold text-foreground mb-6">Help & Support</h1>
-          )}
-
-          <Card className="shadow-card border-border/50">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <HelpCircle className="h-5 w-5 text-primary" />
-                Frequently Asked Questions
-              </CardTitle>
-              <CardDescription>Find answers to common questions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Accordion type="single" collapsible className="w-full">
-                {faqs.map((faq, i) => (
-                  <AccordionItem key={i} value={`faq-${i}`}>
-                    <AccordionTrigger className="text-sm text-left">{faq.q}</AccordionTrigger>
-                    <AccordionContent className="text-sm text-muted-foreground">{faq.a}</AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-card border-border/50">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-primary" />
-                Get in Touch
-              </CardTitle>
-              <CardDescription>Need more help? Reach out to us</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 h-12"
-                onClick={() => navigate("/contact")}
-              >
-                <FileText className="h-4 w-4 text-primary" />
-                <div className="text-left">
-                  <p className="text-sm font-medium">Contact Management</p>
-                  <p className="text-xs text-muted-foreground">View contact details and addresses</p>
-                </div>
-              </Button>
-            </CardContent>
-          </Card>
+    <div className="min-h-screen bg-[#f7f8f7] p-6 md:p-8">
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-8">
+          <p className="text-sm font-medium text-[#94b83d] mb-2">Help Center</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-[#1f2937]">
+            Tenant Help & Support
+          </h1>
+          <p className="text-gray-500 mt-2 max-w-2xl">
+            Find quick answers to common maintenance questions and learn when to
+            submit a normal request or use emergency maintenance.
+          </p>
         </div>
-      </main>
+
+        <div className="grid gap-5 md:grid-cols-2">
+          {articles.map((article, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+            >
+              <h3 className="text-lg font-semibold text-[#1f2937] mb-3">
+                {article.title}
+              </h3>
+              <p className="text-gray-600 leading-7 text-sm">{article.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
-};
-
-export default HelpSupport;
+}
