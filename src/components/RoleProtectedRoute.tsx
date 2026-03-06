@@ -19,6 +19,7 @@ const RoleProtectedRoute = ({ children, allow }: RoleProtectedRouteProps) => {
 
       if (!user) {
         setCheckingRole(false);
+        setUserRole(null);
         return;
       }
 
@@ -64,8 +65,14 @@ const RoleProtectedRoute = ({ children, allow }: RoleProtectedRouteProps) => {
   }
 
   if (!userRole || !allow.includes(userRole)) {
-    if (userRole === "admin") return <Navigate to="/admin" replace />;
-    if (userRole === "vendor") return <Navigate to="/vendor" replace />;
+    if (userRole === "admin") {
+      return <Navigate to="/admin" replace />;
+    }
+
+    if (userRole === "vendor") {
+      return <Navigate to="/vendor" replace />;
+    }
+
     return <Navigate to="/tenant-dashboard" replace />;
   }
 
