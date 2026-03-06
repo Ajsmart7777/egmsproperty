@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useVendors, SPECIALTIES, Specialty, Vendor } from "@/hooks/useVendors";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,47 +37,76 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Trash2, Wrench, Mail, User, AlertCircle, Settings2, Download, Upload, FileText } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Wrench,
+  Mail,
+  User,
+  AlertCircle,
+  Settings2,
+  Download,
+  Upload,
+  FileText,
+} from "lucide-react";
 
 const Vendors = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { logAction } = useAuditLog();
   const { vendors, loading, refetch, updateSpecialties } = useVendors();
+
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminLoading, setAdminLoading] = useState(true);
-  
+
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
   const [specialtiesDialogOpen, setSpecialtiesDialogOpen] = useState(false);
+
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [editingSpecialties, setEditingSpecialties] = useState<Specialty[]>([]);
-  
+
   const [newVendorEmail, setNewVendorEmail] = useState("");
   const [newVendorPassword, setNewVendorPassword] = useState("");
   const [newVendorName, setNewVendorName] = useState("");
   const [newVendorSpecialties, setNewVendorSpecialties] = useState<Specialty[]>([]);
+
   const [creating, setCreating] = useState(false);
   const [revoking, setRevoking] = useState(false);
   const [savingSpecialties, setSavingSpecialties] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const checkAdmin = async () => {
-      if (!user) return;
+      if (!user) {
+        setIsAdmin(false);
+        setAdminLoading(false);
+        return;
+      }
+
       const { data } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id)
         .eq("role", "admin")
         .maybeSingle();
+
       setIsAdmin(!!data);
       setAdminLoading(false);
     };
+
     checkAdmin();
   }, [user]);
+
+  const resetCreateForm = () => {
+    setNewVendorEmail("");
+    setNewVendorPassword("");
+    setNewVendorName("");
+    setNewVendorSpecialties([]);
+  };
 
   const handleCreateVendor = async () => {
     if (!newVendorEmail || !newVendorPassword || !newVendorName) {
@@ -85,30 +114,24 @@ const Vendors = () => {
       return;
     }
 
+    if (newVendorPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
     setCreating(true);
+
     try {
-      // Get admin's current session BEFORE signup (signup will change the session)
-      const { data: sessionData } = await supabase.auth.getSession();
-      const adminToken = sessionData.session?.access_token;
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const adminToken = session?.access_token;
 
       if (!adminToken) {
         throw new Error("Admin session not found");
       }
 
-      // Create the user account (this may auto-sign in the new user)
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newVendorEmail,
-        password: newVendorPassword,
-        options: {
-          data: { full_name: newVendorName },
-          emailRedirectTo: `${window.location.origin}/`,
-        },
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Failed to create user");
-
-      // Use edge function with admin's token to add vendor role
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-vendor-role`,
         {
@@ -119,25 +142,24 @@ const Vendors = () => {
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({
-            vendorUserId: authData.user.id,
+            email: newVendorEmail.trim(),
+            password: newVendorPassword,
+            fullName: newVendorName.trim(),
             specialties: newVendorSpecialties,
           }),
         }
       );
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Failed to assign vendor role");
 
-      // Restore admin session if it was changed
-      if (sessionData.session) {
-        await supabase.auth.setSession(sessionData.session);
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to create vendor account");
       }
 
-      // Log the audit action
       await logAction({
         action: "vendor_created",
         entity_type: "vendor",
-        entity_id: authData.user.id,
+        entity_id: result.userId,
         details: {
           vendor_name: newVendorName,
           vendor_email: newVendorEmail,
@@ -147,10 +169,7 @@ const Vendors = () => {
 
       toast.success(`Vendor account created for ${newVendorName}`);
       setCreateDialogOpen(false);
-      setNewVendorEmail("");
-      setNewVendorPassword("");
-      setNewVendorName("");
-      setNewVendorSpecialties([]);
+      resetCreateForm();
       refetch();
     } catch (error: any) {
       console.error("Error creating vendor:", error);
@@ -164,6 +183,7 @@ const Vendors = () => {
     if (!selectedVendor) return;
 
     setRevoking(true);
+
     try {
       const { error } = await supabase
         .from("user_roles")
@@ -173,7 +193,6 @@ const Vendors = () => {
 
       if (error) throw error;
 
-      // Log the audit action
       await logAction({
         action: "role_revoked",
         entity_type: "user_role",
@@ -211,7 +230,6 @@ const Vendors = () => {
     setSavingSpecialties(false);
 
     if (result.success) {
-      // Log the audit action
       await logAction({
         action: "vendor_specialties_updated",
         entity_type: "vendor",
@@ -230,7 +248,11 @@ const Vendors = () => {
     }
   };
 
-  const toggleSpecialty = (specialty: Specialty, list: Specialty[], setList: (s: Specialty[]) => void) => {
+  const toggleSpecialty = (
+    specialty: Specialty,
+    list: Specialty[],
+    setList: (s: Specialty[]) => void
+  ) => {
     if (list.includes(specialty)) {
       setList(list.filter((s) => s !== specialty));
     } else {
@@ -246,7 +268,7 @@ const Vendors = () => {
     const headers = ["Name", "Email", "Password", "Specialties"];
     const sampleData = [
       '"John Smith","john@example.com","SecurePass123","Plumbing; Electrical"',
-      '"Jane Doe","jane@example.com","SecurePass456","HVAC; Appliances"',
+      '"Jane Doe","jane@example.com","SecurePass456","HVAC; Appliance Repair"',
     ];
     const csvContent = [headers.join(","), ...sampleData].join("\n");
 
@@ -259,6 +281,7 @@ const Vendors = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+
     toast.success("Template downloaded");
   };
 
@@ -266,11 +289,13 @@ const Vendors = () => {
     const headers = ["Name", "Email", "Specialties"];
     const csvContent = [
       headers.join(","),
-      ...vendors.map((vendor) => [
-        `"${vendor.full_name}"`,
-        `"${vendor.email}"`,
-        `"${vendor.specialties.map(getSpecialtyLabel).join("; ")}"`,
-      ].join(","))
+      ...vendors.map((vendor) =>
+        [
+          `"${vendor.full_name}"`,
+          `"${vendor.email}"`,
+          `"${vendor.specialties.map(getSpecialtyLabel).join("; ")}"`,
+        ].join(",")
+      ),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -282,6 +307,7 @@ const Vendors = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+
     toast.success("Vendors exported successfully");
   };
 
@@ -289,19 +315,21 @@ const Vendors = () => {
     const result: string[] = [];
     let current = "";
     let inQuotes = false;
-    
+
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
+
       if (char === '"') {
         inQuotes = !inQuotes;
       } else if (char === "," && !inQuotes) {
-        result.push(current.trim());
+        result.push(current.trim().replace(/^"|"$/g, ""));
         current = "";
       } else {
         current += char;
       }
     }
-    result.push(current.trim());
+
+    result.push(current.trim().replace(/^"|"$/g, ""));
     return result;
   };
 
@@ -311,26 +339,28 @@ const Vendors = () => {
 
     setImporting(true);
     setImportProgress({ current: 0, total: 0 });
+
     const reader = new FileReader();
-    
+
     reader.onload = async (e) => {
       try {
         const text = e.target?.result as string;
         const lines = text.split("\n").filter((line) => line.trim());
-        
+
         if (lines.length < 2) {
           toast.error("CSV file must have a header row and at least one data row");
           setImporting(false);
           return;
         }
 
-        // Skip header row
         const dataRows = lines.slice(1);
         setImportProgress({ current: 0, total: dataRows.length });
-        
-        // Get admin's current session
-        const { data: sessionData } = await supabase.auth.getSession();
-        const adminToken = sessionData.session?.access_token;
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        const adminToken = session?.access_token;
 
         if (!adminToken) {
           throw new Error("Admin session not found");
@@ -343,59 +373,36 @@ const Vendors = () => {
 
         for (const row of dataRows) {
           const columns = parseCSVLine(row);
-          if (columns.length < 3) continue;
-
-          const [name, email, password, specialtiesStr] = columns;
-          
-          if (!name || !email || !password) {
-            errors.push(`Skipped row: missing required fields (name, email, or password)`);
-            errorCount++;
+          if (columns.length < 3) {
+            processedCount++;
+            setImportProgress({ current: processedCount, total: dataRows.length });
             continue;
           }
 
-          // Parse specialties (semicolon-separated)
-          const specialtyLabels = specialtiesStr ? specialtiesStr.split(";").map(s => s.trim()) : [];
+          const [name, email, password, specialtiesStr] = columns;
+
+          if (!name || !email || !password) {
+            errors.push(`Skipped row: missing required fields (name, email, or password)`);
+            errorCount++;
+            processedCount++;
+            setImportProgress({ current: processedCount, total: dataRows.length });
+            continue;
+          }
+
+          const specialtyLabels = specialtiesStr
+            ? specialtiesStr.split(";").map((s) => s.trim())
+            : [];
+
           const vendorSpecialties: Specialty[] = specialtyLabels
-            .map(label => SPECIALTIES.find(s => s.label.toLowerCase() === label.toLowerCase())?.value)
+            .map(
+              (label) =>
+                SPECIALTIES.find(
+                  (s) => s.label.toLowerCase() === label.toLowerCase()
+                )?.value
+            )
             .filter((s): s is Specialty => !!s);
 
           try {
-            let userId: string | null = null;
-
-            // Try to create the user account
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-              email: email.trim(),
-              password: password.trim(),
-              options: {
-                data: { full_name: name.trim() },
-                emailRedirectTo: `${window.location.origin}/`,
-              },
-            });
-
-            if (authError) {
-              // If user already exists, look up their profile to get user_id
-              if (authError.message.includes("already registered")) {
-                const { data: existingProfile } = await supabase
-                  .from("profiles")
-                  .select("user_id")
-                  .eq("email", email.trim())
-                  .maybeSingle();
-
-                if (existingProfile?.user_id) {
-                  userId = existingProfile.user_id;
-                } else {
-                  throw new Error("User exists but profile not found");
-                }
-              } else {
-                throw authError;
-              }
-            } else if (authData.user) {
-              userId = authData.user.id;
-            }
-
-            if (!userId) throw new Error("Failed to get user ID");
-
-            // Use edge function with admin's token to add vendor role
             const response = await fetch(
               `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-vendor-role`,
               {
@@ -406,14 +413,19 @@ const Vendors = () => {
                   apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
                 },
                 body: JSON.stringify({
-                  vendorUserId: userId,
+                  email: email.trim(),
+                  password: password.trim(),
+                  fullName: name.trim(),
                   specialties: vendorSpecialties,
                 }),
               }
             );
 
             const result = await response.json();
-            if (!response.ok) throw new Error(result.error || "Failed to assign vendor role");
+
+            if (!response.ok) {
+              throw new Error(result.error || "Failed to create vendor");
+            }
 
             successCount++;
           } catch (error: any) {
@@ -425,15 +437,11 @@ const Vendors = () => {
           }
         }
 
-        // Restore admin session
-        if (sessionData.session) {
-          await supabase.auth.setSession(sessionData.session);
-        }
-
         if (successCount > 0) {
           toast.success(`Successfully imported ${successCount} vendor(s)`);
           refetch();
         }
+
         if (errorCount > 0) {
           toast.error(`Failed to import ${errorCount} vendor(s)`);
           console.error("Import errors:", errors);
@@ -443,6 +451,8 @@ const Vendors = () => {
         toast.error(error.message || "Failed to import vendors");
       } finally {
         setImporting(false);
+        setImportProgress({ current: 0, total: 0 });
+
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
@@ -485,25 +495,33 @@ const Vendors = () => {
           <h1 className="text-2xl font-bold">Vendor Management</h1>
           <p className="text-muted-foreground">Create and manage vendor accounts</p>
         </div>
+
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={handleDownloadTemplate}>
             <FileText className="h-4 w-4 mr-2" />
             Template
           </Button>
-          <Button variant="outline" onClick={handleExportVendors} disabled={vendors.length === 0}>
+
+          <Button
+            variant="outline"
+            onClick={handleExportVendors}
+            disabled={vendors.length === 0}
+          >
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             onClick={() => fileInputRef.current?.click()}
             disabled={importing}
           >
             <Upload className="h-4 w-4 mr-2" />
-            {importing 
-              ? `Importing ${importProgress.current}/${importProgress.total}` 
+            {importing
+              ? `Importing ${importProgress.current}/${importProgress.total}`
               : "Import"}
           </Button>
+
           <input
             ref={fileInputRef}
             type="file"
@@ -511,6 +529,7 @@ const Vendors = () => {
             className="hidden"
             onChange={handleImportVendors}
           />
+
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Vendor
@@ -518,7 +537,6 @@ const Vendors = () => {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4 flex items-center gap-4">
@@ -533,11 +551,11 @@ const Vendors = () => {
         </Card>
       </div>
 
-      {/* Vendors Table */}
       <Card>
         <CardHeader>
           <CardTitle>All Vendors</CardTitle>
         </CardHeader>
+
         <CardContent>
           {loading ? (
             <div className="space-y-4">
@@ -559,7 +577,6 @@ const Vendors = () => {
             </div>
           ) : (
             <>
-              {/* Mobile Cards */}
               <div className="md:hidden space-y-4">
                 {vendors.map((vendor) => (
                   <Card key={vendor.user_id} className="bg-muted/30">
@@ -570,10 +587,12 @@ const Vendors = () => {
                             <User className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">{vendor.full_name}</span>
                           </div>
+
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Mail className="h-4 w-4" />
                             <span>{vendor.email}</span>
                           </div>
+
                           <div className="flex flex-wrap gap-1 mt-2">
                             {vendor.specialties.length > 0 ? (
                               vendor.specialties.map((s) => (
@@ -582,10 +601,13 @@ const Vendors = () => {
                                 </Badge>
                               ))
                             ) : (
-                              <span className="text-xs text-muted-foreground">No specialties</span>
+                              <span className="text-xs text-muted-foreground">
+                                No specialties
+                              </span>
                             )}
                           </div>
                         </div>
+
                         <div className="flex flex-col gap-1">
                           <Button
                             variant="ghost"
@@ -594,6 +616,7 @@ const Vendors = () => {
                           >
                             <Settings2 className="h-4 w-4" />
                           </Button>
+
                           <Button
                             variant="ghost"
                             size="icon"
@@ -612,7 +635,6 @@ const Vendors = () => {
                 ))}
               </div>
 
-              {/* Desktop Table */}
               <div className="hidden md:block">
                 <Table>
                   <TableHeader>
@@ -623,6 +645,7 @@ const Vendors = () => {
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
+
                   <TableBody>
                     {vendors.map((vendor) => (
                       <TableRow key={vendor.user_id}>
@@ -651,6 +674,7 @@ const Vendors = () => {
                               <Settings2 className="h-4 w-4 mr-2" />
                               Specialties
                             </Button>
+
                             <Button
                               variant="ghost"
                               size="sm"
@@ -675,12 +699,12 @@ const Vendors = () => {
         </CardContent>
       </Card>
 
-      {/* Create Vendor Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Create Vendor Account</DialogTitle>
           </DialogHeader>
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="vendorName">Full Name</Label>
@@ -691,6 +715,7 @@ const Vendors = () => {
                 placeholder="Enter vendor's full name"
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="vendorEmail">Email</Label>
               <Input
@@ -701,6 +726,7 @@ const Vendors = () => {
                 placeholder="vendor@example.com"
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="vendorPassword">Password</Label>
               <Input
@@ -711,6 +737,7 @@ const Vendors = () => {
                 placeholder="Create a password"
               />
             </div>
+
             <div className="space-y-2">
               <Label>Specialties</Label>
               <div className="grid grid-cols-2 gap-2">
@@ -720,7 +747,11 @@ const Vendors = () => {
                       id={`new-${specialty.value}`}
                       checked={newVendorSpecialties.includes(specialty.value)}
                       onCheckedChange={() =>
-                        toggleSpecialty(specialty.value, newVendorSpecialties, setNewVendorSpecialties)
+                        toggleSpecialty(
+                          specialty.value,
+                          newVendorSpecialties,
+                          setNewVendorSpecialties
+                        )
                       }
                     />
                     <label
@@ -734,6 +765,7 @@ const Vendors = () => {
               </div>
             </div>
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
               Cancel
@@ -745,12 +777,12 @@ const Vendors = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Specialties Dialog */}
       <Dialog open={specialtiesDialogOpen} onOpenChange={setSpecialtiesDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Specialties - {selectedVendor?.full_name}</DialogTitle>
           </DialogHeader>
+
           <div className="py-4">
             <div className="grid grid-cols-2 gap-3">
               {SPECIALTIES.map((specialty) => (
@@ -759,7 +791,11 @@ const Vendors = () => {
                     id={`edit-${specialty.value}`}
                     checked={editingSpecialties.includes(specialty.value)}
                     onCheckedChange={() =>
-                      toggleSpecialty(specialty.value, editingSpecialties, setEditingSpecialties)
+                      toggleSpecialty(
+                        specialty.value,
+                        editingSpecialties,
+                        setEditingSpecialties
+                      )
                     }
                   />
                   <label
@@ -772,8 +808,12 @@ const Vendors = () => {
               ))}
             </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSpecialtiesDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setSpecialtiesDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button onClick={handleSaveSpecialties} disabled={savingSpecialties}>
@@ -783,16 +823,17 @@ const Vendors = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Revoke Access Dialog */}
       <AlertDialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Revoke Vendor Access</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to revoke vendor access for {selectedVendor?.full_name}? 
-              They will no longer be able to view or update assigned maintenance requests.
+              Are you sure you want to revoke vendor access for{" "}
+              {selectedVendor?.full_name}? They will no longer be able to view or
+              update assigned maintenance requests.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
