@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ClipboardList,
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useMaintenanceRequests } from "@/hooks/useMaintenanceRequests";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
 import Logo from "@/components/ui/Logo";
 import RequestStatsChart from "@/components/dashboard/RequestStatsChart";
 import RequestBarChart from "@/components/dashboard/RequestBarChart";
@@ -21,6 +23,33 @@ const Index = () => {
   const { requests, loading } = useMaintenanceRequests();
   const isMobile = useIsMobile();
 
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isVendor, setIsVendor] = useState(false);
+
+  useEffect(() => {
+    const checkRoles = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        setIsVendor(false);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+
+      if (data) {
+        setIsAdmin(data.some((r) => r.role === "admin"));
+        setIsVendor(data.some((r) => r.role === "vendor"));
+      }
+    };
+
+    checkRoles();
+  }, [user]);
+
+  const isTenantOnly = !isAdmin && !isVendor;
+
   const stats = {
     pending: requests.filter((r) => r.status === "pending").length,
     inProgress: requests.filter((r) => r.status === "in-progress").length,
@@ -29,7 +58,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col pb-20 md:pb-0">
-      {/* Header - Only show on mobile */}
       {isMobile && (
         <header className="bg-primary px-4 sm:px-6 pt-8 pb-6 rounded-b-[2rem] shadow-elevated">
           <div className="max-w-4xl mx-auto">
@@ -44,7 +72,6 @@ const Index = () => {
         </header>
       )}
 
-      {/* Desktop Welcome */}
       {!isMobile && (
         <div className="px-6 lg:px-8 pt-6">
           <div className="max-w-4xl">
@@ -58,7 +85,6 @@ const Index = () => {
         </div>
       )}
 
-      {/* Main Content */}
       <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-fade-in">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-4">
@@ -66,70 +92,70 @@ const Index = () => {
           </h2>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            {/* Maintenance Request Card */}
-            <button
-              onClick={() => navigate("/maintenance-request")}
-              className="w-full rounded-2xl bg-card p-4 sm:p-5 shadow-card transition-all hover:shadow-elevated hover:-translate-y-0.5 active:scale-[0.98] text-left"
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-brand-light shrink-0">
-                  <ClipboardList className="h-6 w-6 sm:h-7 sm:w-7 text-brand-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground text-sm sm:text-base">
-                    Submit Maintenance Request
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
-                    Report issues in your property
-                  </p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0" />
-              </div>
-            </button>
+            {isTenantOnly && (
+              <>
+                <button
+                  onClick={() => navigate("/maintenance-request")}
+                  className="w-full rounded-2xl bg-card p-4 sm:p-5 shadow-card transition-all hover:shadow-elevated hover:-translate-y-0.5 active:scale-[0.98] text-left"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-brand-light shrink-0">
+                      <ClipboardList className="h-6 w-6 sm:h-7 sm:w-7 text-brand-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground text-sm sm:text-base">
+                        Submit Maintenance Request
+                      </h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
+                        Report issues in your property
+                      </p>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                  </div>
+                </button>
 
-            {/* My Requests Card */}
-            <button
-              onClick={() => navigate("/my-requests")}
-              className="w-full rounded-2xl bg-card p-4 sm:p-5 shadow-card transition-all hover:shadow-elevated hover:-translate-y-0.5 active:scale-[0.98] text-left"
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-brand-accent/20 shrink-0">
-                  <Building2 className="h-6 w-6 sm:h-7 sm:w-7 text-brand-accent" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground text-sm sm:text-base">
-                    View My Requests
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
-                    Track your submitted requests
-                  </p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0" />
-              </div>
-            </button>
+                <button
+                  onClick={() => navigate("/my-requests")}
+                  className="w-full rounded-2xl bg-card p-4 sm:p-5 shadow-card transition-all hover:shadow-elevated hover:-translate-y-0.5 active:scale-[0.98] text-left"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-brand-accent/20 shrink-0">
+                      <Building2 className="h-6 w-6 sm:h-7 sm:w-7 text-brand-accent" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground text-sm sm:text-base">
+                        View My Requests
+                      </h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
+                        Track your submitted requests
+                      </p>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                  </div>
+                </button>
 
-            {/* Emergency Maintenance Card */}
-            <button
-              onClick={() => navigate("/emergency-maintenance")}
-              className="w-full rounded-2xl bg-card p-4 sm:p-5 shadow-card border border-red-100 transition-all hover:shadow-elevated hover:-translate-y-0.5 active:scale-[0.98] text-left"
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-red-100 shrink-0">
-                  <AlertTriangle className="h-6 w-6 sm:h-7 sm:w-7 text-red-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground text-sm sm:text-base">
-                    Emergency Maintenance
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                    Report urgent issues that need immediate attention
-                  </p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0" />
-              </div>
-            </button>
+                <button
+                  onClick={() => navigate("/emergency-maintenance")}
+                  className="w-full rounded-2xl bg-card p-4 sm:p-5 shadow-card border border-red-100 transition-all hover:shadow-elevated hover:-translate-y-0.5 active:scale-[0.98] text-left"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-red-100 shrink-0">
+                      <AlertTriangle className="h-6 w-6 sm:h-7 sm:w-7 text-red-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground text-sm sm:text-base">
+                        Emergency Maintenance
+                      </h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                        Report urgent issues that need immediate attention
+                      </p>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                  </div>
+                </button>
+              </>
+            )}
 
-            {/* Help Center Card */}
             <button
               onClick={() => navigate("/help-support")}
               className="w-full rounded-2xl bg-card p-4 sm:p-5 shadow-card transition-all hover:shadow-elevated hover:-translate-y-0.5 active:scale-[0.98] text-left"
@@ -151,7 +177,6 @@ const Index = () => {
             </button>
           </div>
 
-          {/* Stats Cards */}
           <div className="mt-6 sm:mt-8 grid grid-cols-3 gap-2 sm:gap-4">
             <div className="rounded-xl bg-card p-3 sm:p-4 shadow-soft text-center">
               <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-brand-primary">
@@ -179,7 +204,6 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Dashboard Charts */}
           <div className="mt-6 sm:mt-8">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="h-5 w-5 text-brand-primary" />
@@ -229,17 +253,18 @@ const Index = () => {
         </div>
       </main>
 
-      {/* Bottom CTA */}
-      <div className="p-4 sm:p-6 lg:p-8 pt-0">
-        <div className="max-w-4xl mx-auto">
-          <Button
-            onClick={() => navigate("/maintenance-request")}
-            className="w-full sm:w-auto sm:min-w-[280px] sm:mx-auto sm:flex h-12 sm:h-14 rounded-xl bg-primary text-primary-foreground font-semibold text-sm sm:text-base shadow-card hover:bg-secondary transition-colors active:scale-[0.98]"
-          >
-            New Maintenance Request
-          </Button>
+      {isTenantOnly && (
+        <div className="p-4 sm:p-6 lg:p-8 pt-0">
+          <div className="max-w-4xl mx-auto">
+            <Button
+              onClick={() => navigate("/maintenance-request")}
+              className="w-full sm:w-auto sm:min-w-[280px] sm:mx-auto sm:flex h-12 sm:h-14 rounded-xl bg-primary text-primary-foreground font-semibold text-sm sm:text-base shadow-card hover:bg-secondary transition-colors active:scale-[0.98]"
+            >
+              New Maintenance Request
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
