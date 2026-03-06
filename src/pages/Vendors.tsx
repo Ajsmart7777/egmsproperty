@@ -139,7 +139,7 @@ const Vendors = () => {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${adminToken}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({
             email: newVendorEmail.trim(),
