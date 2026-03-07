@@ -61,6 +61,8 @@ const updateIcons: Record<string, typeof Clock> = {
   completed: CheckCircle2,
 };
 
+const normalizeText = (value?: string | null) => value?.trim().toLowerCase() || "";
+
 const RequestDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -71,6 +73,12 @@ const RequestDetail = () => {
   const [commentImages, setCommentImages] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [activeTab, setActiveTab] = useState<"details" | "comments" | "updates">("details");
+
+  const currentUserFullName = normalizeText(
+    typeof user?.user_metadata?.full_name === "string" ? user.user_metadata.full_name : ""
+  );
+  const currentUserEmailName = normalizeText(user?.email?.split("@")[0]);
+  const currentUserPossibleNames = [currentUserFullName, currentUserEmailName].filter(Boolean);
 
   const formatDate = (dateString: string) => {
     try {
@@ -95,12 +103,8 @@ const RequestDetail = () => {
   };
 
   const getCommentRoleBadgeClass = (commenterRole?: string | null) => {
-    if (commenterRole === "admin") {
-      return "bg-primary/10 text-primary";
-    }
-    if (commenterRole === "vendor") {
-      return "bg-amber-100 text-amber-700";
-    }
+    if (commenterRole === "admin") return "bg-primary/10 text-primary";
+    if (commenterRole === "vendor") return "bg-amber-100 text-amber-700";
     return "bg-muted text-muted-foreground";
   };
 
@@ -293,7 +297,9 @@ const RequestDetail = () => {
                 </div>
               ) : (
                 comments.map((comment, index) => {
-                  const isCurrentUser = comment.user_id === user?.id;
+                  const normalizedAuthor = normalizeText(comment.author);
+                  const isCurrentUser = currentUserPossibleNames.includes(normalizedAuthor);
+
                   const displayName = isCurrentUser
                     ? `${comment.author} (You)`
                     : comment.author;
