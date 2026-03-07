@@ -5,10 +5,21 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import ImageUpload from "@/components/ui/ImageUpload";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Droplets, Zap, Sparkles, Building2, MoreHorizontal, 
-  Calendar, Send, Clock, MessageSquare, 
-  CheckCircle2, User, Wrench, Image as ImageIcon
+import { useAuth } from "@/hooks/useAuth";
+import {
+  Droplets,
+  Zap,
+  Sparkles,
+  Building2,
+  MoreHorizontal,
+  Calendar,
+  Send,
+  Clock,
+  MessageSquare,
+  CheckCircle2,
+  User,
+  Wrench,
+  Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -53,6 +64,7 @@ const updateIcons: Record<string, typeof Clock> = {
 const RequestDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { request, comments, updates, loading, addComment } = useRequestDetails(id);
   const { uploadImages } = useImageUpload();
   const [newComment, setNewComment] = useState("");
@@ -74,6 +86,22 @@ const RequestDetail = () => {
     } catch {
       return dateString;
     }
+  };
+
+  const getCommentRoleLabel = (commenterRole?: string | null) => {
+    if (commenterRole === "admin") return "Admin";
+    if (commenterRole === "vendor") return "Vendor";
+    return "Tenant";
+  };
+
+  const getCommentRoleBadgeClass = (commenterRole?: string | null) => {
+    if (commenterRole === "admin") {
+      return "bg-primary/10 text-primary";
+    }
+    if (commenterRole === "vendor") {
+      return "bg-amber-100 text-amber-700";
+    }
+    return "bg-muted text-muted-foreground";
   };
 
   const handleSendComment = async () => {
@@ -126,7 +154,8 @@ const RequestDetail = () => {
   }
 
   const Icon = issueIcons[request.issue_type as IssueType] || MoreHorizontal;
-  const priority = priorityLabels[request.priority as keyof typeof priorityLabels] || priorityLabels.medium;
+  const priority =
+    priorityLabels[request.priority as keyof typeof priorityLabels] || priorityLabels.medium;
   const issueColor = issueColors[request.issue_type as IssueType] || issueColors.others;
 
   return (
@@ -138,7 +167,6 @@ const RequestDetail = () => {
     >
       <MobileHeader title="Request Details" onBack={() => navigate("/my-requests")} />
 
-      {/* Status Banner */}
       <div className="bg-card px-4 sm:px-6 lg:px-8 py-3 shadow-soft">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <StatusBadge status={request.status as Status} />
@@ -150,7 +178,6 @@ const RequestDetail = () => {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="sticky top-[72px] z-40 bg-background border-b border-border px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto flex">
           {(["details", "comments", "updates"] as const).map((tab) => (
@@ -177,13 +204,19 @@ const RequestDetail = () => {
         <div className="max-w-4xl mx-auto">
           {activeTab === "details" && (
             <div className="space-y-4 sm:space-y-6">
-              {/* Issue Header */}
               <div className="flex items-start gap-4">
-                <div className={cn("flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl", issueColor)}>
+                <div
+                  className={cn(
+                    "flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl",
+                    issueColor
+                  )}
+                >
                   <Icon className="h-6 w-6 sm:h-7 sm:w-7" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-base sm:text-lg font-semibold text-foreground">{request.title}</h2>
+                  <h2 className="text-base sm:text-lg font-semibold text-foreground">
+                    {request.title}
+                  </h2>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
                     <span className="capitalize text-muted-foreground">{request.issue_type}</span>
                     <span className="text-muted-foreground">•</span>
@@ -192,15 +225,14 @@ const RequestDetail = () => {
                 </div>
               </div>
 
-              {/* Description & Location Grid */}
               <div className="grid gap-4 sm:grid-cols-2">
-                {/* Description */}
                 <div className="rounded-xl bg-card p-4 shadow-soft sm:col-span-2">
                   <h3 className="text-sm font-semibold text-foreground mb-2">Description</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{request.description}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {request.description}
+                  </p>
                 </div>
 
-                {/* Location Info */}
                 <div className="rounded-xl bg-card p-4 shadow-soft">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Location</h3>
                   <div className="flex items-center gap-3 text-sm">
@@ -214,7 +246,6 @@ const RequestDetail = () => {
                   </div>
                 </div>
 
-                {/* Submission Date */}
                 <div className="rounded-xl bg-card p-4 shadow-soft">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Submitted</h3>
                   <div className="flex items-center gap-3 text-sm">
@@ -228,7 +259,6 @@ const RequestDetail = () => {
                 </div>
               </div>
 
-              {/* Attached Images */}
               {request.images && request.images.length > 0 && (
                 <div className="rounded-xl bg-card p-4 shadow-soft">
                   <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
@@ -257,53 +287,91 @@ const RequestDetail = () => {
                 <div className="text-center py-12">
                   <MessageSquare className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
                   <p className="text-muted-foreground">No comments yet</p>
-                  <p className="text-sm text-muted-foreground mt-1">Be the first to add a comment</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Be the first to add a comment
+                  </p>
                 </div>
               ) : (
-                comments.map((comment, index) => (
-                  <div
-                    key={comment.id}
-                    className={cn(
-                      "rounded-xl p-4 animate-fade-in",
-                      comment.is_staff ? "bg-brand-light" : "bg-card shadow-soft"
-                    )}
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={cn(
-                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
-                        comment.is_staff ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                      )}>
-                        {comment.author.charAt(0)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <span className="font-medium text-foreground text-sm">{comment.author}</span>
-                          {comment.is_staff && (
-                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Staff</span>
+                comments.map((comment, index) => {
+                  const isCurrentUser = comment.user_id === user?.id;
+                  const displayName = isCurrentUser
+                    ? `${comment.author} (You)`
+                    : comment.author;
+
+                  const roleLabel = getCommentRoleLabel(comment.commenter_role);
+                  const roleBadgeClass = getCommentRoleBadgeClass(comment.commenter_role);
+
+                  return (
+                    <div
+                      key={comment.id}
+                      className={cn(
+                        "rounded-xl p-4 animate-fade-in",
+                        comment.commenter_role === "admin"
+                          ? "bg-brand-light"
+                          : comment.commenter_role === "vendor"
+                          ? "bg-amber-50"
+                          : "bg-card shadow-soft"
+                      )}
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={cn(
+                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
+                            comment.commenter_role === "admin"
+                              ? "bg-primary text-primary-foreground"
+                              : comment.commenter_role === "vendor"
+                              ? "bg-amber-500 text-white"
+                              : "bg-muted text-muted-foreground"
                           )}
+                        >
+                          {comment.author?.charAt(0)?.toUpperCase() || "U"}
                         </div>
-                        {comment.message && (
-                          <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{comment.message}</p>
-                        )}
-                        {comment.images && comment.images.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {comment.images.map((img, imgIndex) => (
-                              <img
-                                key={imgIndex}
-                                src={img}
-                                alt={`Attachment ${imgIndex + 1}`}
-                                className="h-20 w-20 rounded-lg object-cover shadow-soft cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={() => window.open(img, "_blank")}
-                              />
-                            ))}
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <span className="font-medium text-foreground text-sm">
+                              {displayName}
+                            </span>
+
+                            <span
+                              className={cn(
+                                "text-xs px-2 py-0.5 rounded-full",
+                                roleBadgeClass
+                              )}
+                            >
+                              {roleLabel}
+                            </span>
                           </div>
-                        )}
-                        <p className="mt-2 text-xs text-muted-foreground">{formatTimestamp(comment.created_at)}</p>
+
+                          {comment.message && (
+                            <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+                              {comment.message}
+                            </p>
+                          )}
+
+                          {comment.images && comment.images.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {comment.images.map((img, imgIndex) => (
+                                <img
+                                  key={imgIndex}
+                                  src={img}
+                                  alt={`Attachment ${imgIndex + 1}`}
+                                  className="h-20 w-20 rounded-lg object-cover shadow-soft cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={() => window.open(img, "_blank")}
+                                />
+                              ))}
+                            </div>
+                          )}
+
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            {formatTimestamp(comment.created_at)}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           )}
@@ -317,9 +385,8 @@ const RequestDetail = () => {
                 </div>
               ) : (
                 <>
-                  {/* Timeline line */}
                   <div className="absolute left-5 top-2 bottom-2 w-0.5 bg-border" />
-                  
+
                   <div className="space-y-6">
                     {updates.map((update, index) => {
                       const UpdateIcon = updateIcons[update.update_type] || Clock;
@@ -329,20 +396,30 @@ const RequestDetail = () => {
                           className="relative flex gap-4 animate-fade-in"
                           style={{ animationDelay: `${index * 50}ms` }}
                         >
-                          <div className={cn(
-                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-full z-10",
-                            update.update_type === "completed" 
-                              ? "bg-status-completed text-primary-foreground" 
-                              : "bg-card shadow-soft border border-border"
-                          )}>
-                            <UpdateIcon className={cn(
-                              "h-5 w-5",
-                              update.update_type === "completed" ? "text-primary-foreground" : "text-muted-foreground"
-                            )} />
+                          <div
+                            className={cn(
+                              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full z-10",
+                              update.update_type === "completed"
+                                ? "bg-status-completed text-primary-foreground"
+                                : "bg-card shadow-soft border border-border"
+                            )}
+                          >
+                            <UpdateIcon
+                              className={cn(
+                                "h-5 w-5",
+                                update.update_type === "completed"
+                                  ? "text-primary-foreground"
+                                  : "text-muted-foreground"
+                              )}
+                            />
                           </div>
                           <div className="flex-1 pt-1.5">
-                            <p className="font-medium text-foreground text-sm">{update.message}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{formatTimestamp(update.created_at)}</p>
+                            <p className="font-medium text-foreground text-sm">
+                              {update.message}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatTimestamp(update.created_at)}
+                            </p>
                           </div>
                         </div>
                       );
@@ -355,7 +432,6 @@ const RequestDetail = () => {
         </div>
       </div>
 
-      {/* Comment Input - Fixed at bottom */}
       {activeTab === "comments" && (
         <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0 left-0 md:left-64 right-0 bg-card border-t border-border px-4 py-3 sm:px-6 sm:py-4 lg:px-8 shadow-elevated z-50">
           <div className="max-w-4xl mx-auto space-y-2 sm:space-y-3">
