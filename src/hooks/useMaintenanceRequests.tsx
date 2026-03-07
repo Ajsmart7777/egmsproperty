@@ -24,6 +24,7 @@ export interface RequestComment {
   request_id: string;
   user_id: string;
   author: string;
+  author_email?: string | null;
   message: string | null;
   is_staff: boolean;
   commenter_role?: string | null;
@@ -312,6 +313,7 @@ export const useRequestDetails = (requestId: string | undefined) => {
       request_id: requestId,
       user_id: user.id,
       author: authorName,
+      author_email: user.email,
       message: message || null,
       images,
       is_staff: isStaff,

@@ -69,16 +69,11 @@ const RequestDetail = () => {
   const { user } = useAuth();
   const { request, comments, updates, loading, addComment } = useRequestDetails(id);
   const { uploadImages } = useImageUpload();
+
   const [newComment, setNewComment] = useState("");
   const [commentImages, setCommentImages] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [activeTab, setActiveTab] = useState<"details" | "comments" | "updates">("details");
-
-  const currentUserFullName = normalizeText(
-    typeof user?.user_metadata?.full_name === "string" ? user.user_metadata.full_name : ""
-  );
-  const currentUserEmailName = normalizeText(user?.email?.split("@")[0]);
-  const currentUserPossibleNames = [currentUserFullName, currentUserEmailName].filter(Boolean);
 
   const formatDate = (dateString: string) => {
     try {
@@ -114,6 +109,7 @@ const RequestDetail = () => {
     setSending(true);
     try {
       let imageUrls: string[] = [];
+
       if (commentImages.length > 0) {
         imageUrls = await uploadImages(commentImages);
       }
@@ -217,6 +213,7 @@ const RequestDetail = () => {
                 >
                   <Icon className="h-6 w-6 sm:h-7 sm:w-7" />
                 </div>
+
                 <div className="flex-1 min-w-0">
                   <h2 className="text-base sm:text-lg font-semibold text-foreground">
                     {request.title}
@@ -297,8 +294,8 @@ const RequestDetail = () => {
                 </div>
               ) : (
                 comments.map((comment, index) => {
-                  const normalizedAuthor = normalizeText(comment.author);
-                  const isCurrentUser = currentUserPossibleNames.includes(normalizedAuthor);
+                  const isCurrentUser =
+                    normalizeText(comment.author_email) === normalizeText(user?.email);
 
                   const displayName = isCurrentUser
                     ? `${comment.author} (You)`
@@ -396,6 +393,7 @@ const RequestDetail = () => {
                   <div className="space-y-6">
                     {updates.map((update, index) => {
                       const UpdateIcon = updateIcons[update.update_type] || Clock;
+
                       return (
                         <div
                           key={update.id}
@@ -419,6 +417,7 @@ const RequestDetail = () => {
                               )}
                             />
                           </div>
+
                           <div className="flex-1 pt-1.5">
                             <p className="font-medium text-foreground text-sm">
                               {update.message}
@@ -447,6 +446,7 @@ const RequestDetail = () => {
               maxImages={3}
               compact
             />
+
             <div className="flex gap-2 sm:gap-3">
               <Textarea
                 value={newComment}
