@@ -26,6 +26,7 @@ export interface RequestComment {
   author: string;
   message: string | null;
   is_staff: boolean;
+  commenter_role?: string | null;
   images: string[];
   created_at: string;
 }
@@ -71,27 +72,26 @@ export const useMaintenanceRequests = () => {
     fetchRequests();
   }, [user]);
 
-  // Mapping from issue type names to vendor specialty values
   const issueTypeToSpecialtyMap: Record<string, string> = {
-    "plumbing": "plumbing",
-    "electrical": "electrical",
-    "hvac": "hvac",
+    plumbing: "plumbing",
+    electrical: "electrical",
+    hvac: "hvac",
     "appliance repair": "appliance",
-    "painting": "painting",
+    painting: "painting",
     "pest control": "pest_control",
-    "bricklaying": "bricklaying",
+    bricklaying: "bricklaying",
     "ac/washing technician": "ac_washing",
-    "cleaning": "other",
-    "structural": "other",
+    cleaning: "other",
+    structural: "other",
     "alluminium technician": "other",
-    "others": "other",
+    others: "other",
   };
 
   const findMatchingVendor = async (issueType: string) => {
     const normalizedIssueType = issueType.toLowerCase();
-    const matchingSpecialty = issueTypeToSpecialtyMap[normalizedIssueType] || "other";
+    const matchingSpecialty =
+      issueTypeToSpecialtyMap[normalizedIssueType] || "other";
 
-    // Get vendors with matching specialty
     const { data: matchingVendorSpecialties } = await supabase
       .from("vendor_specialties")
       .select("user_id")
@@ -101,9 +101,8 @@ export const useMaintenanceRequests = () => {
       return null;
     }
 
-    const vendorUserIds = matchingVendorSpecialties.map(v => v.user_id);
+    const vendorUserIds = matchingVendorSpecialties.map((v) => v.user_id);
 
-    // Verify they have the vendor role
     const { data: vendorRoles } = await supabase
       .from("user_roles")
       .select("user_id")
@@ -114,7 +113,6 @@ export const useMaintenanceRequests = () => {
       return null;
     }
 
-    // Get vendor profile for the first matching vendor
     const { data: vendorProfile } = await supabase
       .from("profiles")
       .select("user_id, full_name")
@@ -132,11 +130,13 @@ export const useMaintenanceRequests = () => {
   };
 
   const createRequest = async (
-    data: Omit<MaintenanceRequest, "id" | "user_id" | "status" | "assigned_to" | "created_at" | "updated_at">
+    data: Omit<
+      MaintenanceRequest,
+      "id" | "user_id" | "status" | "assigned_to" | "created_at" | "updated_at"
+    >
   ) => {
     if (!user) throw new Error("Must be logged in");
 
-    // Find a matching vendor for auto-assignment
     const matchingVendor = await findMatchingVendor(data.issue_type);
 
     const { data: newRequest, error } = await supabase
@@ -152,16 +152,14 @@ export const useMaintenanceRequests = () => {
 
     if (error) throw error;
 
-    // Create initial update entry
     await supabase.from("request_updates").insert({
       request_id: newRequest.id,
       update_type: "created",
-      message: matchingVendor 
+      message: matchingVendor
         ? `Request submitted and auto-assigned to ${matchingVendor.full_name}`
         : "Request submitted",
     });
 
-    // Send notification email to auto-assigned vendor
     if (matchingVendor) {
       try {
         await supabase.functions.invoke("notify-vendor-assignment", {
@@ -178,7 +176,6 @@ export const useMaintenanceRequests = () => {
         });
       } catch (notifyError) {
         console.error("Error sending vendor notification:", notifyError);
-        // Don't fail the request creation if notification fails
       }
     }
 
@@ -203,7 +200,6 @@ export const useRequestDetails = (requestId: string | undefined) => {
     }
 
     try {
-      // Fetch request
       const { data: requestData, error: requestError } = await supabase
         .from("maintenance_requests")
         .select("*")
@@ -213,7 +209,6 @@ export const useRequestDetails = (requestId: string | undefined) => {
       if (requestError) throw requestError;
       setRequest(requestData);
 
-      // Fetch comments
       const { data: commentsData, error: commentsError } = await supabase
         .from("request_comments")
         .select("*")
@@ -223,7 +218,6 @@ export const useRequestDetails = (requestId: string | undefined) => {
       if (commentsError) throw commentsError;
       setComments(commentsData || []);
 
-      // Fetch updates
       const { data: updatesData, error: updatesError } = await supabase
         .from("request_updates")
         .select("*")
@@ -244,7 +238,6 @@ export const useRequestDetails = (requestId: string | undefined) => {
     fetchDetails();
   }, [user, requestId]);
 
-  // Real-time subscription for comments
   useEffect(() => {
     if (!requestId) return;
 
@@ -269,7 +262,6 @@ export const useRequestDetails = (requestId: string | undefined) => {
     };
   }, [requestId]);
 
-  // Real-time subscription for updates
   useEffect(() => {
     if (!requestId) return;
 
@@ -297,31 +289,33 @@ export const useRequestDetails = (requestId: string | undefined) => {
   const addComment = async (message: string, images: string[]) => {
     if (!user || !requestId) throw new Error("Must be logged in");
 
-    // Check if user is a vendor or admin (staff)
     const { data: roleData } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", user.id)
-      .in("role", ["vendor", "admin"]);
+      .eq("user_id", user.id);
 
-    const isStaff = roleData && roleData.length > 0;
+    const isAdmin = roleData?.some((r) => r.role === "admin") || false;
+    const isVendor = roleData?.some((r) => r.role === "vendor") || false;
 
-    // Get user's display name from profile
+    const commenterRole = isAdmin ? "admin" : isVendor ? "vendor" : "tenant";
+    const isStaff = isAdmin || isVendor;
+
     const { data: profileData } = await supabase
       .from("profiles")
       .select("full_name")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const authorName = profileData?.full_name || "You";
+    const authorName = profileData?.full_name || user.email || "Unknown User";
 
     const { error } = await supabase.from("request_comments").insert({
       request_id: requestId,
       user_id: user.id,
       author: authorName,
       message: message || null,
-      images: images,
+      images,
       is_staff: isStaff,
+      commenter_role: commenterRole,
     });
 
     if (error) throw error;
