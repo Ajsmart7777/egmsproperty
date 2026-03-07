@@ -127,7 +127,7 @@ const RequestDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-background">
         <MobileHeader title="Request Details" onBack={() => navigate("/my-requests")} />
         <div className="flex items-center justify-center py-20">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -138,9 +138,9 @@ const RequestDetail = () => {
 
   if (!request) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-background">
         <MobileHeader title="Request Details" onBack={() => navigate("/my-requests")} />
-        <div className="flex flex-col items-center justify-center py-20">
+        <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
           <p className="text-muted-foreground">Request not found</p>
           <button
             onClick={() => navigate("/my-requests")}
@@ -161,37 +161,38 @@ const RequestDetail = () => {
   return (
     <div
       className={cn(
-        "min-h-screen bg-background md:pb-8",
+        "min-h-screen w-full max-w-full overflow-x-hidden bg-background md:pb-8",
         activeTab === "comments" ? "pb-44" : "pb-24"
       )}
     >
       <MobileHeader title="Request Details" onBack={() => navigate("/my-requests")} />
 
-      <div className="bg-card px-4 sm:px-6 lg:px-8 py-3 shadow-soft">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+      <div className="w-full max-w-full overflow-x-hidden bg-card px-4 sm:px-6 lg:px-8 py-3 shadow-soft">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-3 min-w-0">
           <StatusBadge status={request.status as Status} />
           {request.assigned_to && (
-            <span className="text-sm text-muted-foreground">
-              Assigned to: <span className="font-medium text-foreground">{request.assigned_to}</span>
+            <span className="hidden sm:block text-sm text-muted-foreground text-right break-words">
+              Assigned to:{" "}
+              <span className="font-medium text-foreground">{request.assigned_to}</span>
             </span>
           )}
         </div>
       </div>
 
-      <div className="sticky top-[72px] z-40 bg-background border-b border-border px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto flex">
+      <div className="sticky top-[72px] z-40 w-full max-w-full overflow-x-hidden bg-background border-b border-border px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto flex min-w-0">
           {(["details", "comments", "updates"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "flex-1 py-3 text-sm font-medium capitalize transition-colors relative",
+                "flex-1 min-w-0 py-3 text-sm font-medium capitalize transition-colors relative",
                 activeTab === tab
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {tab}
+              <span className="truncate block">{tab}</span>
               {activeTab === tab && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
               )}
@@ -200,11 +201,11 @@ const RequestDetail = () => {
         </div>
       </div>
 
-      <div className="p-4 sm:p-6 lg:p-8 animate-fade-in">
-        <div className="max-w-4xl mx-auto">
+      <div className="w-full max-w-full overflow-x-hidden p-4 sm:p-6 lg:p-8 animate-fade-in">
+        <div className="max-w-4xl mx-auto min-w-0">
           {activeTab === "details" && (
             <div className="space-y-4 sm:space-y-6">
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-4 min-w-0">
                 <div
                   className={cn(
                     "flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-xl",
@@ -215,11 +216,13 @@ const RequestDetail = () => {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-base sm:text-lg font-semibold text-foreground">
+                  <h2 className="text-base sm:text-lg font-semibold text-foreground break-words">
                     {request.title}
                   </h2>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
-                    <span className="capitalize text-muted-foreground">{request.issue_type}</span>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-sm min-w-0">
+                    <span className="capitalize text-muted-foreground break-words">
+                      {request.issue_type}
+                    </span>
                     <span className="text-muted-foreground">•</span>
                     <span className={priority.color}>{priority.label}</span>
                   </div>
@@ -227,43 +230,45 @@ const RequestDetail = () => {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-xl bg-card p-4 shadow-soft sm:col-span-2">
+                <div className="rounded-xl bg-card p-4 shadow-soft sm:col-span-2 min-w-0 overflow-hidden">
                   <h3 className="text-sm font-semibold text-foreground mb-2">Description</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <p className="text-sm text-muted-foreground leading-relaxed break-words">
                     {request.description}
                   </p>
                 </div>
 
-                <div className="rounded-xl bg-card p-4 shadow-soft">
+                <div className="rounded-xl bg-card p-4 shadow-soft min-w-0 overflow-hidden">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Location</h3>
-                  <div className="flex items-center gap-3 text-sm">
+                  <div className="flex items-center gap-3 text-sm min-w-0">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-light shrink-0">
                       <Building2 className="h-5 w-5 text-brand-primary" />
                     </div>
-                    <div>
-                      <p className="font-medium text-foreground">{request.building}</p>
-                      <p className="text-muted-foreground">{request.apartment}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground break-words">{request.building}</p>
+                      <p className="text-muted-foreground break-words">{request.apartment}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-xl bg-card p-4 shadow-soft">
+                <div className="rounded-xl bg-card p-4 shadow-soft min-w-0 overflow-hidden">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Submitted</h3>
-                  <div className="flex items-center gap-3 text-sm">
+                  <div className="flex items-center gap-3 text-sm min-w-0">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted shrink-0">
                       <Calendar className="h-5 w-5 text-muted-foreground" />
                     </div>
-                    <div>
-                      <p className="font-medium text-foreground">{formatDate(request.created_at)}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground break-words">
+                        {formatDate(request.created_at)}
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
 
               {request.images && request.images.length > 0 && (
-                <div className="rounded-xl bg-card p-4 shadow-soft">
+                <div className="rounded-xl bg-card p-4 shadow-soft min-w-0 overflow-hidden">
                   <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4" />
+                    <ImageIcon className="h-4 w-4 shrink-0" />
                     Attached Images
                   </h3>
                   <div className="flex flex-wrap gap-2">
@@ -283,9 +288,9 @@ const RequestDetail = () => {
           )}
 
           {activeTab === "comments" && (
-            <div className="space-y-4">
+            <div className="space-y-4 w-full max-w-full">
               {comments.length === 0 ? (
-                <div className="text-center py-12">
+                <div className="text-center py-12 px-4">
                   <MessageSquare className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
                   <p className="text-muted-foreground">No comments yet</p>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -308,7 +313,7 @@ const RequestDetail = () => {
                     <div
                       key={comment.id}
                       className={cn(
-                        "rounded-xl p-4 animate-fade-in",
+                        "rounded-xl p-4 animate-fade-in w-full max-w-full overflow-hidden",
                         comment.commenter_role === "admin"
                           ? "bg-brand-light"
                           : comment.commenter_role === "vendor"
@@ -317,7 +322,7 @@ const RequestDetail = () => {
                       )}
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
                         <div
                           className={cn(
                             "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
@@ -333,13 +338,13 @@ const RequestDetail = () => {
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2 flex-wrap">
-                            <span className="font-medium text-foreground text-sm">
+                            <span className="font-medium text-foreground text-sm break-words">
                               {displayName}
                             </span>
 
                             <span
                               className={cn(
-                                "text-xs px-2 py-0.5 rounded-full",
+                                "text-xs px-2 py-0.5 rounded-full shrink-0",
                                 roleBadgeClass
                               )}
                             >
@@ -348,7 +353,7 @@ const RequestDetail = () => {
                           </div>
 
                           {comment.message && (
-                            <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+                            <p className="mt-1 text-sm text-muted-foreground leading-relaxed break-words">
                               {comment.message}
                             </p>
                           )}
@@ -367,7 +372,7 @@ const RequestDetail = () => {
                             </div>
                           )}
 
-                          <p className="mt-2 text-xs text-muted-foreground">
+                          <p className="mt-2 text-xs text-muted-foreground break-words">
                             {formatTimestamp(comment.created_at)}
                           </p>
                         </div>
@@ -380,9 +385,9 @@ const RequestDetail = () => {
           )}
 
           {activeTab === "updates" && (
-            <div className="relative">
+            <div className="relative w-full max-w-full overflow-hidden">
               {updates.length === 0 ? (
-                <div className="text-center py-12">
+                <div className="text-center py-12 px-4">
                   <Clock className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
                   <p className="text-muted-foreground">No updates yet</p>
                 </div>
@@ -397,7 +402,7 @@ const RequestDetail = () => {
                       return (
                         <div
                           key={update.id}
-                          className="relative flex gap-4 animate-fade-in"
+                          className="relative flex gap-4 animate-fade-in min-w-0"
                           style={{ animationDelay: `${index * 50}ms` }}
                         >
                           <div
@@ -418,11 +423,11 @@ const RequestDetail = () => {
                             />
                           </div>
 
-                          <div className="flex-1 pt-1.5">
-                            <p className="font-medium text-foreground text-sm">
+                          <div className="flex-1 pt-1.5 min-w-0">
+                            <p className="font-medium text-foreground text-sm break-words">
                               {update.message}
                             </p>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-xs text-muted-foreground mt-1 break-words">
                               {formatTimestamp(update.created_at)}
                             </p>
                           </div>
@@ -438,8 +443,8 @@ const RequestDetail = () => {
       </div>
 
       {activeTab === "comments" && (
-        <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0 left-0 md:left-64 right-0 bg-card border-t border-border px-4 py-3 sm:px-6 sm:py-4 lg:px-8 shadow-elevated z-50">
-          <div className="max-w-4xl mx-auto space-y-2 sm:space-y-3">
+        <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0 left-0 md:left-64 right-0 w-full max-w-full overflow-x-hidden bg-card border-t border-border px-4 py-3 sm:px-6 sm:py-4 lg:px-8 shadow-elevated z-50">
+          <div className="max-w-4xl mx-auto w-full min-w-0 space-y-2 sm:space-y-3">
             <ImageUpload
               images={commentImages}
               onImagesChange={setCommentImages}
@@ -447,12 +452,12 @@ const RequestDetail = () => {
               compact
             />
 
-            <div className="flex gap-2 sm:gap-3">
+            <div className="flex gap-2 sm:gap-3 min-w-0">
               <Textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Type your message..."
-                className="min-h-[44px] sm:min-h-[48px] max-h-[100px] sm:max-h-[120px] rounded-xl border-border bg-muted/50 resize-none text-sm sm:text-base"
+                className="min-h-[44px] sm:min-h-[48px] max-h-[100px] sm:max-h-[120px] rounded-xl border-border bg-muted/50 resize-none text-sm sm:text-base min-w-0"
                 rows={1}
                 disabled={sending}
               />

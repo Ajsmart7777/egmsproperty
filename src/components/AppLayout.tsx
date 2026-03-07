@@ -11,25 +11,26 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const isMobile = useIsMobile();
 
-  // Always wrap with SidebarProvider to prevent HMR context issues
   return (
     <SidebarProvider defaultOpen={true}>
       {isMobile ? (
-        <>
-          {children}
+        <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-background">
+          <div className="w-full max-w-full overflow-x-hidden pb-20">
+            {children}
+          </div>
           <MobileNav />
-        </>
+        </div>
       ) : (
-        <div className="min-h-screen flex w-full bg-background">
+        <div className="min-h-screen flex w-full max-w-full overflow-x-hidden bg-background">
           <AppSidebar />
-          <main className="flex-1 flex flex-col min-h-screen">
+          <main className="flex-1 flex flex-col min-h-screen w-full max-w-full overflow-x-hidden min-w-0">
             <header className="h-14 flex items-center border-b border-border px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-40">
               <SidebarTrigger className="hover:bg-muted rounded-lg transition-colors" />
               <div className="ml-4 text-sm font-medium text-muted-foreground">
                 Property Management Portal
               </div>
             </header>
-            <div className="flex-1 bg-gradient-to-br from-background via-background to-brand-light/30">
+            <div className="flex-1 w-full max-w-full overflow-x-hidden bg-gradient-to-br from-background via-background to-brand-light/30">
               {children}
             </div>
             <Footer />
