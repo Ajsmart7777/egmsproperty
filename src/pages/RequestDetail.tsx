@@ -192,7 +192,7 @@ const RequestDetail = () => {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <span className="truncate block">{tab}</span>
+              <span className="block truncate">{tab}</span>
               {activeTab === tab && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
               )}
